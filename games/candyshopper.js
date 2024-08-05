@@ -6,7 +6,9 @@
 */
 
 let lives = 3;
+let claimedLivesOnCurrentLevel = 0
 
+let isMuted = false;
 const player = "p"
 const juice = "j"
 const chocolate = "c"
@@ -298,10 +300,10 @@ bbbbbcb...b
 bbbbb...bbb`,
   map`
 gww..w......w
-jw.cpw.wwwwaw
+jw.cpw.www.aw
 .w.w.w.w...ag
 .b.w.w.w.b.ag
-...w.w.w.bwag
+...w.w.w.b.ag
 ...w.w.w.bwgw
 ...w...w.bwww
 g........bwww
@@ -329,15 +331,10 @@ w......bgww.
 w......jjgww
 ww.wwwb..www`,
   map`
-...........
-pb.........
-........wg.
-.c......wwg
-..........w
-........w.w
-........w.w
-bbbbjbbbw.w
-ww........w`,
+bww..cg
+bpm....
+.j.w...
+.b..g..`,
   map`
 bww..cg
 bpm....
@@ -475,12 +472,23 @@ onInput("d", () => {
 
 onInput("j", () => {
   const currentLevel = levels[level];
-
+  
   if (currentLevel !== undefined) {
     clearText("");
     const currentLevel = levels[level];
+    lives -= claimedLivesOnCurrentLevel
+    claimedLivesOnCurrentLevel = 0
     setMap(currentLevel);
     playTune(resetTune);
+  }
+});
+
+onInput("l", () => {
+  level++;
+  if (level < levels.length) {
+    claimedLivesOnCurrentLevel = 0
+    setMap(levels[level]);
+    playTune(levelTune); // Play a tune to indicate level reset
   }
 });
 
@@ -491,25 +499,28 @@ afterInput(() => {
   if (tilesWith(player, money).length > 0) {
     const currentLevel = levels[level];
     if (currentLevel !== undefined) {
-      lives++; // Increase lives count
+      lives++;
+      claimedLivesOnCurrentLevel++;
       playTune(addLifeTune);
       let xCoord = playerSprite.x;
       let yCoord = playerSprite.y;
-      setMap(currentLevel);
       clearTile(xCoord, yCoord);
+      addSprite(xCoord, yCoord, 'p')
     }
   }
 
   const fails = tilesWith(player, badjuice).length;
   if (fails >= 1) {
-    playTune(resetTune); // Play reset tune
+    playTune(resetTune);
     lives--;
+    claimedLivesOnCurrentLevel --
   }
 
   if (lives <= 0) {
     level = 0; // Reset level
     setMap(levels[level]); // Load the initial map
     lives = 3;
+    claimedLivesOnCurrentLevel = 0
   }
 
   const baskets = tilesWith(goal).length;
@@ -517,6 +528,7 @@ afterInput(() => {
   const successes = tilesWith(goal, juice).length + tilesWith(goal, chocolate).length + tilesWith(goal, candycane).length;
   if (successes === baskets) {
     level = level + 1;
+    claimedLivesOnCurrentLevel = 0
 
     const currentLevel = levels[level];
 
